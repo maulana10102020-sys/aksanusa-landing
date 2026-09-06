@@ -1,3 +1,35 @@
+/* ---- gradien closing: muncul dari bawah saat scroll turun, masuk lagi saat scroll naik ---- */
+(function(){
+  const glow = document.getElementById('closing-glow');
+  const closingSection = document.querySelector('.closing');
+  if(!glow || !closingSection) return;
+
+  let ticking = false;
+
+  function update(){
+    ticking = false;
+    const rect = closingSection.getBoundingClientRect();
+    const vh = window.innerHeight;
+    // 0 saat section masih di bawah layar, mendekati 1 saat top section mencapai atas layar
+    let progress = (vh - rect.top) / vh;
+    progress = Math.min(1, Math.max(0, progress));
+
+    const translateY = 160 * (1 - progress);
+    const scale = 0.85 + 0.18 * progress;
+    glow.style.transform = `translate(-50%, ${translateY}px) scale(${scale})`;
+    glow.style.opacity = String(progress * 0.85);
+  }
+
+  window.addEventListener('scroll', () => {
+    if(!ticking){
+      ticking = true;
+      requestAnimationFrame(update);
+    }
+  }, { passive:true });
+  window.addEventListener('resize', update);
+  update();
+})();
+
 /* ---- nav bereaksi saat discroll ---- */
 (function(){
   const nav = document.querySelector('nav');
@@ -202,25 +234,25 @@ if(isTouchDevice){
 
 /* ---- animasi kartu tim: masuk bergantian dari kanan, retract & replay saat keluar-masuk viewport ---- */
 (function(){
-  const card1 = document.getElementById('team-card-1');
-  const card2 = document.getElementById('team-card-2');
   const cardsWrap = document.querySelector('.team-cards');
-  if(!card1 || !card2 || !cardsWrap) return;
+  if(!cardsWrap) return;
+  const cards = Array.from(cardsWrap.querySelectorAll('.team-card'));
+  if(!cards.length) return;
 
-  const SHIFT = 190;  // lebar kartu + gap, jarak kartu 1 pindah ke slot kartu 2
-  const OFFSET = 220; // jarak tambahan di luar layar sebelah kanan
+  const OFFSET = 260;      // jarak awal di luar layar sebelah kanan
+  const STAGGER = 140;     // jeda antar kartu saat masuk bergantian
+  const ENTER_DURATION = 700;
 
-  [card1, card2].forEach((c) => {
+  cards.forEach((c) => {
     c.style.transition = 'transform .7s cubic-bezier(.22,.68,0,1.02), opacity .5s ease';
   });
 
   function resetCards(){
-    card1.classList.remove('duo-pulse');
-    card2.classList.remove('duo-pulse');
-    card1.style.transform = `translateX(${SHIFT + OFFSET}px)`;
-    card1.style.opacity = '0';
-    card2.style.transform = `translateX(${OFFSET}px)`;
-    card2.style.opacity = '0';
+    cards.forEach((c) => {
+      c.classList.remove('duo-pulse');
+      c.style.transform = `translateX(${OFFSET}px)`;
+      c.style.opacity = '0';
+    });
   }
   resetCards();
 
@@ -237,26 +269,19 @@ if(isTouchDevice){
     if(played || playing) return;
     playing = true;
 
-    requestAnimationFrame(() => {
-      card1.style.transform = `translateX(${SHIFT}px)`;
-      card1.style.opacity = '1';
+    cards.forEach((c, i) => {
+      timers.push(window.setTimeout(() => {
+        c.style.transform = 'translateX(0)';
+        c.style.opacity = '1';
+      }, i * STAGGER));
     });
 
+    const finishAt = (cards.length - 1) * STAGGER + ENTER_DURATION + 150;
     timers.push(window.setTimeout(() => {
-      card1.style.transform = 'translateX(0)';
-    }, 650));
-
-    timers.push(window.setTimeout(() => {
-      card2.style.transform = 'translateX(0)';
-      card2.style.opacity = '1';
-    }, 750));
-
-    timers.push(window.setTimeout(() => {
-      card1.classList.add('duo-pulse');
-      card2.classList.add('duo-pulse');
+      cards.forEach((c) => c.classList.add('duo-pulse'));
       playing = false;
       played = true;
-    }, 1500));
+    }, finishAt));
   }
 
   const observer = new IntersectionObserver((entries) => {
