@@ -1,3 +1,31 @@
+/* ---- nav bereaksi saat discroll ---- */
+(function(){
+  const nav = document.querySelector('nav');
+  if(!nav) return;
+  function onNavScroll(){
+    if(window.scrollY > 40){ nav.classList.add('scrolled'); }
+    else { nav.classList.remove('scrolled'); }
+  }
+  window.addEventListener('scroll', onNavScroll, { passive:true });
+  onNavScroll();
+})();
+
+/* ---- reveal-on-scroll generic (fade-up), replay tiap masuk area pandang ---- */
+(function(){
+  const revealEls = document.querySelectorAll('.reveal');
+  if(!revealEls.length) return;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if(entry.isIntersecting){
+        entry.target.classList.add('in-view');
+      } else {
+        entry.target.classList.remove('in-view');
+      }
+    });
+  }, { threshold: 0.2 });
+  revealEls.forEach((el) => observer.observe(el));
+})();
+
 const phone = document.getElementById('phone');
 const stage = document.querySelector('.stage');
 const titleEl = document.getElementById('stage-title');
@@ -172,7 +200,7 @@ if(isTouchDevice){
   }, { passive:true });
 }
 
-/* ---- animasi kartu tim: masuk bergantian dari kanan, lalu tampil bersamaan ---- */
+/* ---- animasi kartu tim: masuk bergantian dari kanan, retract & replay saat keluar-masuk viewport ---- */
 (function(){
   const card1 = document.getElementById('team-card-1');
   const card2 = document.getElementById('team-card-2');
@@ -185,47 +213,64 @@ if(isTouchDevice){
   [card1, card2].forEach((c) => {
     c.style.transition = 'transform .7s cubic-bezier(.22,.68,0,1.02), opacity .5s ease';
   });
-  card1.style.transform = `translateX(${SHIFT + OFFSET}px)`;
-  card1.style.opacity = '0';
-  card2.style.transform = `translateX(${OFFSET}px)`;
-  card2.style.opacity = '0';
 
+  function resetCards(){
+    card1.classList.remove('duo-pulse');
+    card2.classList.remove('duo-pulse');
+    card1.style.transform = `translateX(${SHIFT + OFFSET}px)`;
+    card1.style.opacity = '0';
+    card2.style.transform = `translateX(${OFFSET}px)`;
+    card2.style.opacity = '0';
+  }
+  resetCards();
+
+  let playing = false;
   let played = false;
-  function playSequence(){
-    if(played) return;
-    played = true;
+  let timers = [];
 
-    // 1) kartu orang pertama masuk dari kanan, berhenti di slot kanan
+  function clearTimers(){
+    timers.forEach((t) => window.clearTimeout(t));
+    timers = [];
+  }
+
+  function playSequence(){
+    if(played || playing) return;
+    playing = true;
+
     requestAnimationFrame(() => {
       card1.style.transform = `translateX(${SHIFT}px)`;
       card1.style.opacity = '1';
     });
 
-    // 2) kartu itu bergeser ke posisi aslinya (kiri), memberi ruang untuk orang ke-2
-    window.setTimeout(() => {
+    timers.push(window.setTimeout(() => {
       card1.style.transform = 'translateX(0)';
-    }, 650);
+    }, 650));
 
-    // 3) kartu orang ke-2 masuk dari kanan mengisi slot kanan
-    window.setTimeout(() => {
+    timers.push(window.setTimeout(() => {
       card2.style.transform = 'translateX(0)';
       card2.style.opacity = '1';
-    }, 750);
+    }, 750));
 
-    // 4) setelah keduanya di posisi, tampil bersamaan dengan efek highlight sinkron
-    window.setTimeout(() => {
+    timers.push(window.setTimeout(() => {
       card1.classList.add('duo-pulse');
       card2.classList.add('duo-pulse');
-    }, 1500);
+      playing = false;
+      played = true;
+    }, 1500));
   }
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
-      if(entry.isIntersecting){
+      if(entry.isIntersecting && entry.intersectionRatio >= 0.35){
         playSequence();
-        observer.unobserve(entry.target);
+      } else if(!entry.isIntersecting){
+        // section keluar dari layar (scroll ke atas maupun ke bawah) -> reset untuk diputar ulang
+        clearTimers();
+        playing = false;
+        played = false;
+        resetCards();
       }
     });
-  }, { threshold: 0.35 });
+  }, { threshold: [0, 0.35] });
   observer.observe(cardsWrap);
 })();
