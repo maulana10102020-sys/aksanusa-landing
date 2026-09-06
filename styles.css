@@ -120,6 +120,17 @@
   @media (hover:none) and (pointer:coarse){
     .stage{ height:220vh; }
   }
+  .snap-marker{
+    position:absolute;
+    left:0; width:1px; height:1px;
+    opacity:0;
+    pointer-events:none;
+    scroll-snap-align:start;
+    scroll-snap-stop:always;
+  }
+  @media (hover:none) and (pointer:coarse){
+    html{ scroll-snap-type:y mandatory; }
+  }
   .stage-sticky{
     position:sticky; top:0;
     height:100svh;

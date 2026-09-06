@@ -121,10 +121,31 @@ if(!isTouchDevice){
 }
 
 /* ============================================================
-   MODE LAYAR SENTUH (HP/iPad): scroll dibiarkan alami,
-   tampilan tetap berubah mengikuti posisi scroll saat itu.
+   MODE LAYAR SENTUH (HP/iPad): pakai native CSS scroll-snap
+   (scroll-snap-stop:always) supaya 1 swipe = 1 langkah, jauh
+   lebih stabil daripada menahan scroll manual lewat JS.
    ============================================================ */
 if(isTouchDevice){
+  const markers = document.querySelectorAll('.snap-marker');
+
+  function positionMarkers(){
+    const travel = stage.offsetHeight - window.innerHeight;
+    markers.forEach((m) => {
+      const n = parseInt(m.dataset.marker, 10);
+      m.style.top = `${(travel * n) / 2}px`;
+    });
+  }
+  positionMarkers();
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(positionMarkers, 150);
+  });
+  window.addEventListener('orientationchange', () => {
+    window.setTimeout(positionMarkers, 200);
+  });
+
   let ticking = false;
 
   function updateFromScroll(){
