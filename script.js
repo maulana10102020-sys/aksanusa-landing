@@ -1,3 +1,37 @@
+/* ---- tombol scroll atas/bawah (layar sentuh): klik = 1 langkah, tekan lama = scroll berulang ---- */
+(function(){
+  const btnUp = document.getElementById('scroll-nav-up');
+  const btnDown = document.getElementById('scroll-nav-down');
+  if(!btnUp || !btnDown) return;
+
+  let holdTimer = null;
+
+  function doScroll(direction){
+    const amount = window.innerHeight * 0.55 * direction; // 1=turun, -1=naik
+    window.scrollBy({ top: amount, behavior:'smooth' });
+  }
+
+  function startHold(direction){
+    doScroll(direction);
+    holdTimer = window.setTimeout(function repeat(){
+      doScroll(direction);
+      holdTimer = window.setTimeout(repeat, 260);
+    }, 420);
+  }
+
+  function stopHold(){
+    window.clearTimeout(holdTimer);
+    holdTimer = null;
+  }
+
+  btnUp.addEventListener('pointerdown', (e) => { e.preventDefault(); startHold(-1); });
+  btnDown.addEventListener('pointerdown', (e) => { e.preventDefault(); startHold(1); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((evt) => {
+    btnUp.addEventListener(evt, stopHold);
+    btnDown.addEventListener(evt, stopHold);
+  });
+})();
+
 /* ---- gradien closing: muncul dari bawah saat scroll turun, masuk lagi saat scroll naik ---- */
 (function(){
   const glow = document.getElementById('closing-glow');
