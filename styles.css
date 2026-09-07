@@ -533,6 +533,14 @@
     margin-bottom:14px;
     border:1px solid var(--line);
     pointer-events:none;
+    background:rgba(17,24,43,0.06); /* fallback selama belum ada foto */
+  }
+  .moment-img img{
+    position:absolute;
+    inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    object-position:center;
   }
   .moment-kind{
     font-size:12px; font-weight:600; color:#fff;
