@@ -599,7 +599,7 @@
     font-size:13px; color:var(--ink-soft);
     flex-wrap:wrap; gap:12px;
   }
-  footer .logo-mark img{ height:16px; opacity:0.85; }
+  footer .logo-mark img{ height:36px; opacity:0.85; }
 
   @media (max-width:760px){
     .feature-grid{ grid-template-columns:1fr; }
