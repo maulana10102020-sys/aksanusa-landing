@@ -8,7 +8,7 @@
     --line: rgba(17,24,43,0.10);
   }
   *{ margin:0; padding:0; box-sizing:border-box; }
-  html{ scroll-behavior:smooth; }
+  html{ scroll-behavior:auto; }
   body{
     background:
       radial-gradient(1150px 750px at 88% -6%, rgba(47,111,238,0.24), transparent 62%),
@@ -126,10 +126,11 @@
   /* ---------- SCROLL STAGE (moving object) ---------- */
   .stage{
     position:relative;
-    height:280vh;
+    /* 3 viewport positions: start, middle, end. No dead space after step 3. */
+    height:300svh;
   }
   @media (hover:none) and (pointer:coarse){
-    .stage{ height:220vh; }
+    .stage{ height:220svh; }
   }
   .snap-marker{
     position:absolute;
@@ -138,9 +139,11 @@
     pointer-events:none;
     scroll-snap-align:start;
     scroll-snap-stop:always;
+    scroll-margin-top:0;
   }
   @media (hover:none) and (pointer:coarse){
-    html{ scroll-snap-type:y mandatory; }
+    /* Snap only gently on touch; JS keeps the step state in sync. */
+    html{ scroll-snap-type:y proximity; }
   }
   .stage-sticky{
     position:sticky; top:0;
@@ -517,7 +520,9 @@
     .pl-item:nth-child(odd){ border-right:1px solid var(--line); }
     .portfolio-extra{ grid-template-columns:1fr; }
     .team-cards{ margin-left:0; max-width:100%; justify-content:center; }
-    .stage-copy{ position:static; transform:none; margin-bottom:40px; text-align:center; max-width:100%; }
-    .stage-sticky{ flex-direction:column; padding-top:90px; }
+    .stage-copy{ position:static; transform:none; margin-bottom:24px; text-align:center; max-width:min(100%, 520px); }
+    .stage-sticky{ flex-direction:column; padding:76px 20px 20px; justify-content:center; }
+    .step-card{ padding:26px 24px; }
+    .phone{ width:min(250px, 58vw); }
     .hero-meta{ gap:32px; }
   }
