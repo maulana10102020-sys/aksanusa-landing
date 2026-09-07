@@ -65,8 +65,7 @@ const AksanusaStage = (function(){
 (function(){
   const btnUp = document.getElementById('scroll-nav-up');
   const btnDown = document.getElementById('scroll-nav-down');
-  const stage = document.querySelector('.stage');
-  if(!btnUp || !btnDown || !stage) return;
+  if(!btnUp || !btnDown) return;
 
   let holdTimer = null;
   let repeatTimer = null;
@@ -78,31 +77,12 @@ const AksanusaStage = (function(){
     repeatTimer = null;
   }
 
-  function getStageStepPositions(count){
-    const { top, bottom } = AksanusaStage.getBounds();
-    const last = Math.max(1, count - 1);
-    return Array.from({length: count}, (_, i) => top + ((bottom - top) * i) / last);
-  }
-
+  /* Generic: scroll setengah tinggi layar. Sengaja tidak lagi terikat ke
+     posisi step .stage — di layar sentuh, proses kerja kini pakai blok stack
+     biasa (.stage-mobile) yang discroll natural, jadi tombol ini cukup
+     membantu navigasi halaman secara umum. */
   function scrollOne(direction){
-    const positions = getStageStepPositions(AksanusaStage.STEP_COUNT);
-    const y = window.scrollY;
-    const nearest = positions.reduce((best, pos, i) =>
-      Math.abs(pos - y) < Math.abs(positions[best] - y) ? i : best, 0
-    );
-    const targetIndex = Math.max(0, Math.min(positions.length - 1, nearest + direction));
-    const target = positions[targetIndex];
-
-    if(direction < 0 && y <= positions[0] + 2){
-      window.scrollBy({ top: -window.innerHeight * 0.82, behavior:'smooth' });
-      return;
-    }
-    if(direction > 0 && y >= positions[positions.length - 1] - 2){
-      window.scrollBy({ top: window.innerHeight * 0.82, behavior:'smooth' });
-      return;
-    }
-
-    window.scrollTo({ top: target, behavior:'smooth' });
+    window.scrollBy({ top: window.innerHeight * 0.7 * direction, behavior:'smooth' });
   }
 
   function startHold(direction, e){
@@ -110,8 +90,8 @@ const AksanusaStage = (function(){
     stopHold();
     scrollOne(direction);
     holdTimer = window.setTimeout(function(){
-      repeatTimer = window.setInterval(() => scrollOne(direction), 620);
-    }, 520);
+      repeatTimer = window.setInterval(() => scrollOne(direction), 550);
+    }, 480);
   }
 
   btnUp.addEventListener('pointerdown', (e) => startHold(-1, e));
@@ -332,65 +312,11 @@ if(phone && stage && titleEl && descEl && card){
     });
   }
 
-  /* ============================================================
-     MODE LAYAR SENTUH: native scroll + marker.
-     Marker mengikuti posisi step yang sama dengan desktop.
-     ============================================================ */
-  if(isTouchDevice){
-    const markers = document.querySelectorAll('.snap-marker');
-
-    function positionMarkers(){
-      const { top, bottom } = AksanusaStage.getBounds();
-      const travel = Math.max(0, bottom - top);
-      const last = Math.max(1, steps.length - 1);
-      markers.forEach((marker) => {
-        const n = Number.parseInt(marker.dataset.marker, 10);
-        marker.style.top = `${(travel * n) / last}px`;
-      });
-    }
-
-    positionMarkers();
-
-    let resizeTimer = null;
-    function scheduleMarkerUpdate(){
-      window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(() => {
-        AksanusaStage.recalc();
-        positionMarkers();
-      }, 160);
-    }
-
-    window.addEventListener('resize', scheduleMarkerUpdate);
-    window.addEventListener('orientationchange', () => window.setTimeout(() => {
-      AksanusaStage.recalc();
-      positionMarkers();
-    }, 220));
-
-    let ticking = false;
-    function updateFromScroll(){
-      ticking = false;
-      const { top, bottom } = AksanusaStage.getBounds();
-      if(bottom <= top) return;
-
-      const y = window.scrollY;
-      const raw = (y - top) / (bottom - top);
-      const progress = Math.min(1, Math.max(0, raw));
-      const nearest = Math.round(progress * (steps.length - 1));
-
-      if(nearest !== currentIndex){
-        currentIndex = nearest;
-        applyPhone(currentIndex);
-        applyCard(currentIndex, true);
-      }
-    }
-
-    window.addEventListener('scroll', () => {
-      if(!ticking){
-        ticking = true;
-        requestAnimationFrame(updateFromScroll);
-      }
-    }, { passive:true });
-  }
+  /* Catatan: mode layar sentuh untuk "proses kerja" sudah tidak memakai
+     .stage (sticky-pin) sama sekali — digantikan .stage-mobile (3 blok stack
+     + reveal-on-scroll biasa) yang dirender lewat CSS media query dan
+     dianimasikan oleh observer generic ".reveal" di bawah. Ini menghilangkan
+     ketergantungan pada svh presisi yang jadi akar masalah di HP nyata. */
 }
 
 /* ---- animasi kartu tim: masuk bergantian dari kanan, retract & replay saat keluar-masuk viewport ---- */
