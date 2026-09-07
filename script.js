@@ -8,6 +8,42 @@
    - tombol sentuh memakai posisi step yang sama dengan stage
    ============================================================ */
 
+/* ---- cache batas stage bersama: dihitung ulang hanya saat resize/orientation
+   sungguhan, bukan tiap event scroll. Ini mencegah drift saat address bar
+   browser mobile collapse/expand di tengah gesture scroll, yang sebelumnya
+   bikin index step "lompat" mendadak (teks berkedip, layout tersentak). ---- */
+const AksanusaStage = (function(){
+  const STEP_COUNT = 3; // harus sama dengan panjang array `steps` di bawah
+  let cache = null;
+
+  function recalc(){
+    const stage = document.querySelector('.stage');
+    if(!stage){ cache = null; return; }
+    const rect = stage.getBoundingClientRect();
+    const top = window.scrollY + rect.top;
+    const bottom = top + stage.offsetHeight - window.innerHeight;
+    cache = { top, bottom };
+  }
+
+  function getBounds(){
+    if(!cache) recalc();
+    return cache;
+  }
+
+  let resizeTimer = null;
+  function scheduleRecalc(){
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(recalc, 150);
+  }
+
+  window.addEventListener('resize', scheduleRecalc);
+  window.addEventListener('orientationchange', () => window.setTimeout(recalc, 200));
+  window.addEventListener('load', () => window.setTimeout(recalc, 50));
+  recalc();
+
+  return { getBounds, recalc, STEP_COUNT };
+})();
+
 /* ---- tombol scroll atas/bawah (layar sentuh): klik = 1 langkah, tekan lama = scroll berulang ---- */
 (function(){
   const btnUp = document.getElementById('scroll-nav-up');
@@ -25,21 +61,14 @@
     repeatTimer = null;
   }
 
-  function getStageBounds(){
-    const rect = stage.getBoundingClientRect();
-    const top = window.scrollY + rect.top;
-    const bottom = top + stage.offsetHeight - window.innerHeight;
-    return { top, bottom };
-  }
-
   function getStageStepPositions(count){
-    const { top, bottom } = getStageBounds();
+    const { top, bottom } = AksanusaStage.getBounds();
     const last = Math.max(1, count - 1);
     return Array.from({length: count}, (_, i) => top + ((bottom - top) * i) / last);
   }
 
   function scrollOne(direction){
-    const positions = getStageStepPositions(3);
+    const positions = getStageStepPositions(AksanusaStage.STEP_COUNT);
     const y = window.scrollY;
     const nearest = positions.reduce((best, pos, i) =>
       Math.abs(pos - y) < Math.abs(positions[best] - y) ? i : best, 0
@@ -192,15 +221,8 @@ if(phone && stage && titleEl && descEl && card){
     }, 260);
   }
 
-  function getStageBounds(){
-    const rect = stage.getBoundingClientRect();
-    const top = window.scrollY + rect.top;
-    const bottom = top + stage.offsetHeight - window.innerHeight;
-    return { top, bottom };
-  }
-
   function snapPositions(){
-    const { top, bottom } = getStageBounds();
+    const { top, bottom } = AksanusaStage.getBounds();
     const last = Math.max(1, steps.length - 1);
     return steps.map((_, i) => top + ((bottom - top) * i) / last);
   }
@@ -284,7 +306,7 @@ if(phone && stage && titleEl && descEl && card){
   }
 
   function handleWheel(e){
-    const { top, bottom } = getStageBounds();
+    const { top, bottom } = AksanusaStage.getBounds();
     if(bottom <= top) return;
 
     const y = window.scrollY;
@@ -313,7 +335,7 @@ if(phone && stage && titleEl && descEl && card){
       const map = { ArrowDown:1, PageDown:1, ArrowUp:-1, PageUp:-1 };
       if(map[e.key] === undefined) return;
 
-      const { top, bottom } = getStageBounds();
+      const { top, bottom } = AksanusaStage.getBounds();
       const y = window.scrollY;
       if(y < top - 2 || y > bottom + 2) return;
 
@@ -332,7 +354,7 @@ if(phone && stage && titleEl && descEl && card){
     const markers = document.querySelectorAll('.snap-marker');
 
     function positionMarkers(){
-      const { top, bottom } = getStageBounds();
+      const { top, bottom } = AksanusaStage.getBounds();
       const travel = Math.max(0, bottom - top);
       const last = Math.max(1, steps.length - 1);
       markers.forEach((marker) => {
@@ -346,16 +368,22 @@ if(phone && stage && titleEl && descEl && card){
     let resizeTimer = null;
     function scheduleMarkerUpdate(){
       window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(positionMarkers, 120);
+      resizeTimer = window.setTimeout(() => {
+        AksanusaStage.recalc();
+        positionMarkers();
+      }, 160);
     }
 
     window.addEventListener('resize', scheduleMarkerUpdate);
-    window.addEventListener('orientationchange', () => window.setTimeout(positionMarkers, 200));
+    window.addEventListener('orientationchange', () => window.setTimeout(() => {
+      AksanusaStage.recalc();
+      positionMarkers();
+    }, 220));
 
     let ticking = false;
     function updateFromScroll(){
       ticking = false;
-      const { top, bottom } = getStageBounds();
+      const { top, bottom } = AksanusaStage.getBounds();
       if(bottom <= top) return;
 
       const y = window.scrollY;
