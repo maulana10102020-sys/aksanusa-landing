@@ -46,6 +46,23 @@ const AksanusaStage = (function(){
 
 /* ---- tombol scroll atas/bawah (layar sentuh): klik = 1 langkah, tekan lama = scroll berulang ---- */
 (function(){
+  const nav = document.getElementById('scroll-nav');
+  if(!nav) return;
+  const touchQuery = window.matchMedia('(hover: none) and (pointer: coarse)');
+
+  /* Paksa tampil/sembunyi lewat JS juga, jangan cuma andalkan CSS media query —
+     jaga-jaga kalau ada race condition saat render pertama kali. */
+  function syncVisibility(){
+    nav.style.display = touchQuery.matches ? 'flex' : 'none';
+  }
+  syncVisibility();
+  window.addEventListener('load', syncVisibility);
+  if(touchQuery.addEventListener){
+    touchQuery.addEventListener('change', syncVisibility);
+  }
+})();
+
+(function(){
   const btnUp = document.getElementById('scroll-nav-up');
   const btnDown = document.getElementById('scroll-nav-down');
   const stage = document.querySelector('.stage');
@@ -103,37 +120,6 @@ const AksanusaStage = (function(){
     btnUp.addEventListener(evt, stopHold);
     btnDown.addEventListener(evt, stopHold);
   });
-})();
-
-/* ---- gradien closing: muncul dari bawah saat scroll turun, masuk lagi saat scroll naik ---- */
-(function(){
-  const glow = document.getElementById('closing-glow');
-  const closingSection = document.querySelector('.closing');
-  if(!glow || !closingSection) return;
-
-  let ticking = false;
-
-  function update(){
-    ticking = false;
-    const rect = closingSection.getBoundingClientRect();
-    const vh = window.innerHeight;
-    let progress = (vh - rect.top) / vh;
-    progress = Math.min(1, Math.max(0, progress));
-
-    const translateY = 160 * (1 - progress);
-    const scale = 0.85 + 0.18 * progress;
-    glow.style.transform = `translate(-50%, ${translateY}px) scale(${scale})`;
-    glow.style.opacity = String(progress * 0.85);
-  }
-
-  window.addEventListener('scroll', () => {
-    if(!ticking){
-      ticking = true;
-      requestAnimationFrame(update);
-    }
-  }, { passive:true });
-  window.addEventListener('resize', update);
-  update();
 })();
 
 /* ---- nav bereaksi saat discroll ---- */

@@ -466,25 +466,14 @@
   .closing{
     position:relative;
     overflow:hidden;
-    padding:90px 6vw 70px;
+    padding:110px 6vw 90px;
     text-align:center;
-  }
-  .closing-glow{
-    position:absolute;
-    left:50%; bottom:-220px;
-    width:760px; height:760px;
-    transform:translate(-50%, 160px);
-    opacity:0;
-    border-radius:50%;
     background:
-      radial-gradient(circle at 32% 30%, rgba(47,111,238,0.85) 0%, transparent 60%),
-      radial-gradient(circle at 72% 68%, rgba(245,152,10,0.8) 0%, transparent 60%);
-    filter:blur(70px);
-    z-index:0;
-    pointer-events:none;
-    will-change:transform, opacity;
+      radial-gradient(900px 640px at 18% -12%, rgba(47,111,238,0.42), transparent 62%),
+      radial-gradient(850px 620px at 88% 112%, rgba(245,152,10,0.38), transparent 60%),
+      radial-gradient(1100px 800px at 50% 50%, rgba(47,111,238,0.10), transparent 70%),
+      var(--bg);
   }
-  .closing > *{ position:relative; z-index:1; }
   .closing h2{
     font-family:'Fraunces', serif; font-weight:500; font-style:italic;
     font-size:clamp(30px,5vw,56px);
