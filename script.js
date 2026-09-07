@@ -319,6 +319,53 @@ if(phone && stage && titleEl && descEl && card){
      ketergantungan pada svh presisi yang jadi akar masalah di HP nyata. */
 }
 
+/* ---- galeri momen: drag-to-scroll pakai mouse di desktop, native swipe di touch ---- */
+(function(){
+  const track = document.getElementById('moments-track');
+  if(!track) return;
+
+  let isDown = false;
+  let moved = false;
+  let startX = 0;
+  let startScroll = 0;
+
+  function pointerDown(e){
+    if(e.pointerType === 'touch') return; // biarkan native swipe yang urus touch
+    isDown = true;
+    moved = false;
+    startX = e.clientX;
+    startScroll = track.scrollLeft;
+    track.classList.add('dragging');
+    track.setPointerCapture(e.pointerId);
+  }
+
+  function pointerMove(e){
+    if(!isDown) return;
+    const dx = e.clientX - startX;
+    if(Math.abs(dx) > 4) moved = true;
+    track.scrollLeft = startScroll - dx;
+  }
+
+  function pointerUp(){
+    isDown = false;
+    track.classList.remove('dragging');
+  }
+
+  track.addEventListener('pointerdown', pointerDown);
+  track.addEventListener('pointermove', pointerMove);
+  ['pointerup','pointerleave','pointercancel'].forEach((evt) => track.addEventListener(evt, pointerUp));
+
+  // Cegah klik nyangkut (mis. kalau nanti kartu dibuat jadi link) sehabis drag.
+  track.addEventListener('click', (e) => { if(moved) e.preventDefault(); }, true);
+
+  // Mouse biasa (tanpa trackpad) cuma bisa scroll vertikal — konversi ke horizontal.
+  track.addEventListener('wheel', (e) => {
+    if(Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    track.scrollLeft += e.deltaY;
+    e.preventDefault();
+  }, { passive:false });
+})();
+
 /* ---- animasi kartu tim: masuk bergantian dari kanan, retract & replay saat keluar-masuk viewport ---- */
 (function(){
   const cardsWrap = document.querySelector('.team-cards');
